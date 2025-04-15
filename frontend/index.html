@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Substituição Nutricional</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    input, button { padding: 10px; width: 100%; margin-top: 10px; }
+    ul { list-style-type: none; padding: 0; margin-top: 10px; }
+    li { padding: 5px; border-bottom: 1px solid #ddd; }
+    .informacao-nutricional { margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Buscar alimento</h2>
+  <input type="text" id="alimento-input" placeholder="Digite um alimento..." autocomplete="off" />
+  <ul id="sugestoes"></ul>
+  
+  <h2>Substitutos</h2>
+  <ul id="substitutos"></ul>
+
+  <script>
+    const input = document.getElementById("alimento-input");
+    const sugestoes = document.getElementById("sugestoes");
+    const substitutos = document.getElementById("substitutos");
+
+    let timeout = null;
+
+    // Função para buscar sugestões de alimentos
+    input.addEventListener("input", () => {
+      clearTimeout(timeout);
+      const termo = input.value.trim();
+      if (termo.length < 2) {
+        sugestoes.innerHTML = "";
+        return;
+      }
+
+      timeout = setTimeout(() => {
+        fetch(`http://localhost:8000/search?q=${encodeURIComponent(termo)}`)
+          .then(res => res.json())
+          .then(data => {
+            sugestoes.innerHTML = "";
+            data.forEach(nome => {
+              const item = document.createElement("li");
+              item.textContent = nome;
+              item.onclick = () => selecionarAlimento(nome);
+              sugestoes.appendChild(item);
+            });
+          });
+      }, 300);
+    });
+
+    // Função para exibir os substitutos nutricionais
+    function selecionarAlimento(nome) {
+      input.value = nome;
+      sugestoes.innerHTML = "";
+      fetch(`http://localhost:8000/substitutes?alimento=${encodeURIComponent(nome)}`)
+        .then(res => res.json())
+        .then(data => {
+          substitutos.innerHTML = "";
+          data.substitutos.forEach(sub => {
+            const item = document.createElement("li");
+
+            // Adicionando o nome e a distância
+            let substitutoInfo = `${sub.nome} `;
+
+            // Exibindo as informações nutricionais
+            substitutoInfo += `
+              <div class="informacao-nutricional">
+                <p><strong>Proteína:</strong> ${sub.informacoes_nutricionais['Proteína (g)']}g</p>
+                <p><strong>Lipídeos:</strong> ${sub.informacoes_nutricionais['Lipídeos (g)']}g</p>
+                <p><strong>Carboidrato:</strong> ${sub.informacoes_nutricionais['Carboidrato (g)']}g</p>
+                <p><strong>Fibra Alimentar:</strong> ${sub.informacoes_nutricionais['Fibra Alimentar (g)']}g</p>
+                <p><strong>Cálcio:</strong> ${sub.informacoes_nutricionais['Cálcio (mg)']}mg</p>
+              </div>
+            `;
+            
+            item.innerHTML = substitutoInfo;
+            substitutos.appendChild(item);
+          });
+        });
+    }
+  </script>
+</body>
+</html>
