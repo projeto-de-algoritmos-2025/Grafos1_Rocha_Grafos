@@ -1,0 +1,130 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 20px;
+  max-width: 600px;
+  margin: auto;
+  background-color: #f8f5f0;
+  color: #333;
+  line-height: 1.6;
+  background-image: linear-gradient(to bottom, #f8f5f0, #e8f5e9);
+}
+
+h1, h2, h3 {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #c8e6c9;
+  font-size: 2.2em;
+}
+
+input {
+  padding: 12px;
+  width: 100%;
+  margin-top: 15px;
+  border: 1px solid #c8e6c9;
+  border-radius: 25px;
+  font-size: 16px;
+  outline: none;
+  transition: all 0.3s;
+  box-sizing: border-box;
+}
+
+input:focus {
+  border-color: #2e7d32;
+  box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.2);
+}
+
+button {
+  padding: 12px 20px;
+  width: auto;
+  margin: 15px auto;
+  display: block;
+  background-color: #2e7d32;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+button:hover {
+  background-color: #1b5e20;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+  margin-top: 20px;
+}
+
+li {
+  padding: 12px 15px;
+  border-bottom: 1px solid #e0e0e0;
+  transition: all 0.2s;
+  border-radius: 8px;
+  margin-bottom: 5px;
+  background-color: white;
+}
+
+li:hover {
+  background-color: #f1f8e9;
+  transform: translateX(5px);
+}
+
+.informacao-nutricional {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.informacoes-alimento {
+  margin-top: 25px;
+  padding: 20px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-left: 5px solid #2e7d32;
+}
+
+.informacoes-alimento h3 {
+  margin-top: 0;
+  color: #2e7d32;
+  font-size: 1.4em;
+}
+
+.nutriente {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px dashed #e0e0e0;
+}
+
+.nutriente:last-child {
+  border-bottom: none;
+}
+
+.nutriente strong {
+  color: #2e7d32;
+}
+
+/* Adicionando alguns ícones visuais */
+.informacoes-alimento::before {
+  content: "🍎";
+  font-size: 24px;
+  display: block;
+  text-align: center;
+  margin-bottom: 15px;
+}
