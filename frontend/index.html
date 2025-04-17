@@ -1,155 +1,113 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-<head>
-  <meta charset="UTF-8" />
-  <title>Substituição Nutricional</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
-    input, button { padding: 10px; width: 100%; margin-top: 10px; }
-    ul { list-style-type: none; padding: 0; margin-top: 10px; }
-    li { padding: 5px; border-bottom: 1px solid #ddd; }
-    .informacao-nutricional { margin-top: 10px; }
-    .informacoes-alimento { margin-top: 20px; padding: 10px; background-color: #f9f9f9; border-radius: 8px; }
-    .informacoes-alimento h3 { margin-top: 0; }
-  </style>
-</head>
-<body>
-  <h2>Buscar alimento</h2>
-  <input type="text" id="alimento-input" placeholder="Digite um alimento..." autocomplete="off" />
-  <ul id="sugestoes"></ul>
-  
-  <h2>Informações Nutricionais do Alimento</h2>
-  <div id="informacoes-alimento" class="informacoes-alimento"></div>
-
-  <h2>Substitutos</h2>
-  <ul id="substitutos"></ul>
-
-  <script>
-    const input = document.getElementById("alimento-input");
-    const sugestoes = document.getElementById("sugestoes");
-    const substitutos = document.getElementById("substitutos");
-    const informacoesAlimento = document.getElementById("informacoes-alimento");
-
-    let timeout = null;
-
-  
-    input.addEventListener("input", () => {
-      clearTimeout(timeout);
-      const termo = input.value.trim();
-      if (termo.length < 2) {
-        sugestoes.innerHTML = "";
-        return;
+  <head>
+    <meta charset="UTF-8" />
+    <title>Substituição Nutricional</title>
+    <link rel="stylesheet" href="/frontend/style.css">
+    <style>
+      /* Estilo para o spinner */
+      .spinner {
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-top: 4px solid #2e7d32;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
       }
 
-      timeout = setTimeout(() => {
-        fetch(`http://localhost:8000/search?q=${encodeURIComponent(termo)}`)
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head> 
+  <body>
+    <h2>Buscar alimento</h2>
+    <input type="text" id="alimento-input" placeholder="Digite um alimento..." autocomplete="off" />
+    <ul id="sugestoes"></ul>
+
+    <h2>Informações Nutricionais do Alimento</h2>
+    <div id="informacoes-alimento" class="informacoes-alimento"></div>
+
+    <h2>Substitutos</h2>
+    <ul id="substitutos"></ul>
+
+    <script>
+      const input = document.getElementById("alimento-input");
+      const sugestoes = document.getElementById("sugestoes");
+      const substitutos = document.getElementById("substitutos");
+      const informacoesAlimento = document.getElementById("informacoes-alimento");
+
+      let timeout = null;
+
+      // Função de pesquisa e sugestão de alimentos
+      input.addEventListener("input", () => {
+        clearTimeout(timeout);
+        const termo = input.value.trim();
+        if (termo.length < 2) {
+          sugestoes.innerHTML = "";
+          return;
+        }
+
+        timeout = setTimeout(() => {
+          fetch(`http://localhost:8000/search?q=${encodeURIComponent(termo)}`)
+            .then(res => res.json())
+            .then(data => {
+              sugestoes.innerHTML = "";
+              data.forEach(nome => {
+                const item = document.createElement("li");
+                item.textContent = nome;
+                item.onclick = () => selecionarAlimento(nome);
+                sugestoes.appendChild(item);
+              });
+            });
+        }, 300);
+      });
+
+      // Função para selecionar o alimento e exibir substitutos
+      function selecionarAlimento(nome) {
+        input.value = nome;
+        sugestoes.innerHTML = "";
+        
+        // Adiciona o spinner enquanto carrega os dados
+        substitutos.innerHTML = '<div class="spinner"></div>';
+        informacoesAlimento.innerHTML = ""; // Limpa a informação nutricional anterior
+
+        // Requisição para buscar substitutos
+        fetch(`http://localhost:8000/substitutes?alimento=${encodeURIComponent(nome)}`)
           .then(res => res.json())
           .then(data => {
-            sugestoes.innerHTML = "";
-            data.forEach(nome => {
+            // Exibe as informações do alimento inicial
+            const info = data.alimento_inicial;
+            informacoesAlimento.innerHTML = `
+              <h3>Informações Nutricionais de ${info.nome}</h3>
+              <p><strong>Proteína:</strong> ${info.informacoes_nutricionais['Proteína (g)']}g</p>
+              <p><strong>Lipídeos:</strong> ${info.informacoes_nutricionais['Lipídeos (g)']}g</p>
+              <p><strong>Carboidrato:</strong> ${info.informacoes_nutricionais['Carboidrato (g)']}g</p>
+              <p><strong>Fibra Alimentar:</strong> ${info.informacoes_nutricionais['Fibra Alimentar (g)']}g</p>
+              <p><strong>Cálcio:</strong> ${info.informacoes_nutricionais['Cálcio (mg)']}mg</p>
+            `;
+
+            substitutos.innerHTML = ""; // Limpa o spinner
+
+            // Adiciona os substitutos
+            data.substitutos.forEach(sub => {
               const item = document.createElement("li");
-              item.textContent = nome;
-              item.onclick = () => selecionarAlimento(nome);
-              sugestoes.appendChild(item);
+              item.innerHTML = `
+                <h4>${sub.nome}</h4>
+                <div class="informacao-nutricional">
+                  <p><strong>Proteína:</strong> ${sub.informacoes_nutricionais['Proteína (g)']}g</p>
+                  <p><strong>Lipídeos:</strong> ${sub.informacoes_nutricionais['Lipídeos (g)']}g</p>
+                  <p><strong>Carboidrato:</strong> ${sub.informacoes_nutricionais['Carboidrato (g)']}g</p>
+                  <p><strong>Fibra Alimentar:</strong> ${sub.informacoes_nutricionais['Fibra Alimentar (g)']}g</p>
+                  <p><strong>Cálcio:</strong> ${sub.informacoes_nutricionais['Cálcio (mg)']}mg</p>
+                </div>
+              `;
+              substitutos.appendChild(item);
             });
           });
-      }, 300);
-    });
-
-    function selecionarAlimento(nome) {
-      input.value = nome;
-      sugestoes.innerHTML = "";
-      fetch(`http://localhost:8000/substitutes?alimento=${encodeURIComponent(nome)}`)
-        .then(res => res.json())
-        .then(data => {
-      
-          exibirInformacoesAlimento(nome);
-
-          substitutos.innerHTML = "";
-          data.substitutos.forEach(sub => {
-            const item = document.createElement("li");
-
-         
-            let substitutoInfo = `${sub.nome}`;
-
-         
-            substitutoInfo += `
-              <div class="informacao-nutricional">
-                <p><strong>Proteína:</strong> ${sub.informacoes_nutricionais['Proteína (g)']}g</p>
-                <p><strong>Lipídeos:</strong> ${sub.informacoes_nutricionais['Lipídeos (g)']}g</p>
-                <p><strong>Carboidrato:</strong> ${sub.informacoes_nutricionais['Carboidrato (g)']}g</p>
-                <p><strong>Fibra Alimentar:</strong> ${sub.informacoes_nutricionais['Fibra Alimentar (g)']}g</p>
-                <p><strong>Cálcio:</strong> ${sub.informacoes_nutricionais['Cálcio (mg)']}mg</p>
-              </div>
-            `;
-            
-            item.innerHTML = substitutoInfo;
-            substitutos.appendChild(item);
-          });
-        });
-    }
-
- 
-    function exibirInformacoesAlimento(nome) {
-      fetch(`http://localhost:8000/search?q=${encodeURIComponent(nome)}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.length > 0) {
-            const alimento = data[0]; 
-            fetch(`http://localhost:8000/substitutes?alimento=${encodeURIComponent(alimento)}`)
-              .then(res => res.json())
-              .then(data => {
-                const alimentoInfo = data.substitutos.find(sub => sub.nome === nome);
-                if (alimentoInfo) {
-                  informacoesAlimento.innerHTML = `
-                    <h3>Informações Nutricionais de ${alimentoInfo.nome}</h3>
-                    <p><strong>Proteína:</strong> ${alimentoInfo.informacoes_nutricionais['Proteína (g)']}g</p>
-                    <p><strong>Lipídeos:</strong> ${alimentoInfo.informacoes_nutricionais['Lipídeos (g)']}g</p>
-                    <p><strong>Carboidrato:</strong> ${alimentoInfo.informacoes_nutricionais['Carboidrato (g)']}g</p>
-                    <p><strong>Fibra Alimentar:</strong> ${alimentoInfo.informacoes_nutricionais['Fibra Alimentar (g)']}g</p>
-                    <p><strong>Cálcio:</strong> ${alimentoInfo.informacoes_nutricionais['Cálcio (mg)']}mg</p>
-                  `;
-                }
-              });
-          }
-        });
-    }
-    function selecionarAlimento(nome) {
-  input.value = nome;
-  sugestoes.innerHTML = "";
-  fetch(`http://localhost:8000/substitutes?alimento=${encodeURIComponent(nome)}`)
-    .then(res => res.json())
-    .then(data => {
-    
-      const info = data.alimento_inicial;
-      informacoesAlimento.innerHTML = `
-        <h3>${info['Nome'].trim()}</h3>
-        <p><strong>Proteína:</strong> ${info['Proteína (g)']}g</p>
-        <p><strong>Lipídeos:</strong> ${info['Lipídeos (g)']}g</p>
-        <p><strong>Carboidrato:</strong> ${info['Carboidrato (g)']}g</p>
-        <p><strong>Fibra Alimentar:</strong> ${info['Fibra Alimentar (g)']}g</p>
-        <p><strong>Cálcio:</strong> ${info['Cálcio (mg)']}mg</p>
-      `;
-
-   
-      substitutos.innerHTML = "";
-      data.substitutos.forEach(sub => {
-        const item = document.createElement("li");
-        item.innerHTML = `
-          <strong>${sub.nome}</strong> 
-          <div class="informacao-nutricional">
-            <p><strong>Proteína:</strong> ${sub.informacoes_nutricionais['Proteína (g)']}g</p>
-            <p><strong>Lipídeos:</strong> ${sub.informacoes_nutricionais['Lipídeos (g)']}g</p>
-            <p><strong>Carboidrato:</strong> ${sub.informacoes_nutricionais['Carboidrato (g)']}g</p>
-            <p><strong>Fibra Alimentar:</strong> ${sub.informacoes_nutricionais['Fibra Alimentar (g)']}g</p>
-            <p><strong>Cálcio:</strong> ${sub.informacoes_nutricionais['Cálcio (mg)']}mg</p>
-          </div>
-        `;
-        substitutos.appendChild(item);
-      });
-    });
-}
-
-  </script>
-</body>
+      }
+    </script>
+  </body>
 </html>

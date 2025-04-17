@@ -1,104 +1,72 @@
 from fastapi import FastAPI, Query
-from fastapi.middleware.cors import CORSMiddleware
-import pandas as pd
-from collections import deque
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+import pandas as pd
 import os
-
-
 
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Caminho do dataset
+DATA_PATH = os.path.join("data", "taco-db-nutrientes.parquet")
 
+# Carrega os dados uma vez ao iniciar
+df = pd.read_parquet(DATA_PATH)
+df["Nome"] = df["Nome"].str.lower()
 
-df = pd.read_parquet("taco-db-nutrientes.parquet")
-nutrientes = ['Proteína (g)', 'Lipídeos (g)', 'Carboidrato (g)', 'Fibra Alimentar (g)', 'Cálcio (mg)']
+# Monta a pasta de arquivos estáticos (css, js, etc.)
+app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
 
-for col in nutrientes:
-    df[col] = pd.to_numeric(df[col], errors='coerce')
+# Serve o index.html na raiz
+@app.get("/", response_class=HTMLResponse)
+def serve_home():
+    with open(os.path.join("frontend", "index.html"), encoding="utf-8") as f:
+        return f.read()
 
-
-def calcular_similaridade(a1, a2):
-    return sum(abs(a1[n] - a2[n]) for n in nutrientes)
-
-
-grafo = {}
-for i, a1 in df.iterrows():
-    nome1 = a1['Nome']
-    grafo[nome1] = []
-    for j, a2 in df.iterrows():
-        if i != j:
-            nome2 = a2['Nome']
-            distancia = calcular_similaridade(a1, a2)
-            informacao = []
-            grafo[nome1].append((nome2, distancia))
-
-def substitutos_bfs(inicio, max_resultados=5):
-    if inicio not in grafo:
-        return []
-
-    visitados = set()
-    fila = deque([inicio])
-    substitutos = []
-
-  
-    alimento_info = df[df['Nome'] == inicio][['Nome'] + nutrientes]
-    if alimento_info.empty:
-        return {"erro": "Alimento inicial não encontrado no dataset"}
-    
-    alimento_info = alimento_info.to_dict(orient="records")[0]
-
-    while fila and len(substitutos) < max_resultados:
-        atual = fila.popleft()
-        if atual not in visitados:
-            visitados.add(atual)
-            vizinhos_ordenados = sorted(grafo[atual], key=lambda x: x[1])
-
-            for vizinho, dist in vizinhos_ordenados:
-                if vizinho not in visitados:
-                    fila.append(vizinho)
-
-                   
-                    substituto_info = df[df['Nome'] == vizinho][['Nome'] + nutrientes]
-                    if not substituto_info.empty:
-                        substituto_info = substituto_info.to_dict(orient="records")[0]
-                        substitutos.append({
-                            "nome": vizinho,
-                            "distancia": dist,
-                            "informacoes_nutricionais": substituto_info
-                        })
-
-                    if len(substitutos) >= max_resultados:
-                        break
-    print({"alimento_inicial": alimento_info, "substitutos": substitutos})
-    return {"alimento_inicial": alimento_info, "substitutos": substitutos}
-
-
+# Rota de busca (autocomplete)
 @app.get("/search")
-def buscar_alimentos(q: str = Query("")):
-    resultados = df[df['Nome'].str.contains(q, case=False, na=False)]['Nome'].unique().tolist()
+def search(q: str = Query(..., min_length=1)):
+    termos = q.lower()
+    resultados = df[df["Nome"].str.contains(termos)]["Nome"].drop_duplicates().tolist()
     return resultados
 
-
-
+# Rota de substituição
 @app.get("/substitutes")
-def obter_substitutos(alimento: str):
-    resultado = substitutos_bfs(alimento)
-    if 'erro' in resultado:
-        return JSONResponse(status_code=400, content=resultado)
-    return resultado
+def get_substitutes(alimento: str):
+    alimento = alimento.lower()
 
+    if alimento not in df["Nome"].values:
+        return JSONResponse(status_code=404, content={"erro": "Alimento não encontrado"})
 
+    info_alimento = df[df["Nome"] == alimento].iloc[0]
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+    # Exemplo simples: pega 5 alimentos mais similares por proteína
+    df["diff"] = (df["Proteína (g)"] - info_alimento["Proteína (g)"]).abs()
+    similares = df[df["Nome"] != alimento].sort_values(by="diff").head(5)
 
-@app.get("/")
-def ler_index():
-    return FileResponse("static/index.html")
+    substitutos = []
+    for _, row in similares.iterrows():
+        substitutos.append({
+            "nome": str(row["Nome"]),
+            "informacoes_nutricionais": {
+                "Proteína (g)": float(row["Proteína (g)"]),
+                "Lipídeos (g)": float(row["Lipídeos (g)"]),
+                "Carboidrato (g)": float(row["Carboidrato (g)"]),
+                "Fibra Alimentar (g)": float(row["Fibra Alimentar (g)"]),
+                "Cálcio (mg)": float(row["Cálcio (mg)"]),
+            }
+        })
+
+    return {
+        "alimento_inicial": {
+            "nome": str(info_alimento["Nome"]),
+            "informacoes_nutricionais": {
+                "Proteína (g)": float(info_alimento["Proteína (g)"]),
+                "Lipídeos (g)": float(info_alimento["Lipídeos (g)"]),
+                "Carboidrato (g)": float(info_alimento["Carboidrato (g)"]),
+                "Fibra Alimentar (g)": float(info_alimento["Fibra Alimentar (g)"]),
+                "Cálcio (mg)": float(info_alimento["Cálcio (mg)"]),
+            }
+        },
+        "substitutos": substitutos
+    }
+

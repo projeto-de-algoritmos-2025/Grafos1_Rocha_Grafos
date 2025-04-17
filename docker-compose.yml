@@ -1,9 +1,9 @@
-version: "3.9"
 services:
   app:
     build: .
     ports:
       - "8000:8000"
     volumes:
-      - ./app:/app
-      - ./frontend:/app/static
+      - ./app:/app/app
+      - ./frontend:/app/frontend
+      - ./data:/app/data
