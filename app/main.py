@@ -56,10 +56,8 @@ def get_substitutes(alimento: str, k: int = 5):
 
     info_alimento = df[df["Nome"] == alimento].iloc[0]
 
-    # Criar o grafo de similaridade
     grafo = grafo_similaridade
 
-    # BFS: percorre os nós mais similares primeiro
     visitados = set()
     fila = deque()
     fila.append(alimento)
