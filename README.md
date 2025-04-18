@@ -134,8 +134,9 @@ docker compose up --build
 
 <font size="3"><p style="text-align: center">Vídeo 1: Grafos 1 - Substituição Alimentar </p></font>
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/DZ_3LrukvzA?si=dqLoy6b7Ufi6noKk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/DZ_3LrukvzA?si=dqLoy6b7Ufi6noKk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 <font size="3"><p style="text-align: center"><b>Fonte:</b> [Milena Rocha](https://github.com/milenafrocha) e [Ingrid Alves](https://github.com/alvesingrid). Disponível em: <a href="https://www.youtube.com/watch?v=DZ_3LrukvzA">https://www.youtube.com/watch?v=DZ_3LrukvzA</a>. Acesso em: 21 nov. 2024.</p></font>
+
 </div>
 
